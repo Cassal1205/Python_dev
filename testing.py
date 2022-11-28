@@ -1,31 +1,35 @@
+# echo-client.py
+
 import socket
+import time
+
+# MAC address
+MAC = "9C:50:D1:06:4C:86"
+
+# Connection values
+HOST = "172.168.100.95"  # The server's hostname or IP address
+PORT = 5432  # The port used by the server
 
 
-def tcp_server():
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+def tcp_client():
 
-    # Connection values
-    host_name = socket.gethostname()
-    host_ip = socket.gethostbyname(host_name)
-    print(f"Host IP: {host_ip}")
-    port = 8077  # Port to listen on (non-privileged ports are > 1023)
-    socket_address = (host_ip, port)
+    print("\nSearching for a connection...")
+    time.sleep(1)
 
-    # Bind and listen to the connection values
-    server_socket.bind(socket_address)
-    server_socket.listen()
-    print(f"Waiting connection, listening at {socket_address}...")
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.settimeout(30)
+        # Connect to the server
+        s.connect((HOST, PORT))
+        print(f"\nConnected with server:\nIP: {HOST}\t\tPort: {PORT}")
 
-    # Client connection accept
-    conn, addr = server_socket.accept()
-    print(f"Connection from: {addr}")
-    if conn:
-        conn.send("Welcome to the server!".encode())
-    conn.close()
+        # Send MAC address
+        print("\nSending MAC address...")
+        time.sleep(1)
+        s.send(MAC.encode())
 
 
 def main():
-    tcp_server()
+    tcp_client()
 
 
 if __name__ == "__main__":

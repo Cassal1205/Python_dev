@@ -18,8 +18,8 @@ OK_C = "OK_C"
 MAC = "9C:50:D1:06:4C:86"
 
 # Connection values
-HOST = "198.51.100.3"  # The server's hostname or IP address
-PORT = 27708  # The port used by the server
+HOST = "172.168.100.35"  # The server's hostname or IP address
+PORT = 8077  # The port used by the server
 
 
 def tcp_client():
@@ -44,7 +44,7 @@ def tcp_client():
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         try:
-            s.settimeout(10)
+            s.settimeout(30)
             # Connect to the server
             s.connect((HOST, PORT))
             print(f"\nConnected with server:\nIP: {HOST}\t\tPort: {PORT}")
@@ -54,9 +54,11 @@ def tcp_client():
             time.sleep(1)
             s.send(MAC.encode())
 
-            # Receive and print START_MESSAGE from the server
-            data = s.recv(1024).decode()
-            if data == "Starting_Config":
+            def identify(data):
+                print(f"\nReceived: {data}\n")
+
+            def start_configuration(data):
+                # Receive and print START_MESSAGE from the server
                 print(f"\nReceived: {data}\nSending {OK_A} message confirmation.")
                 time.sleep(1)
 
@@ -89,6 +91,19 @@ def tcp_client():
                         print(f"\t- {a}: {values[n]}")
                         n += 1
                     print("\nModule restart initiated.")
+
+            def rcv_data():
+                data = s.recv(1024).decode()
+                if data == "FLASH":
+                    identify(data)
+                    rcv_data()
+                elif data == "Starting_Config":
+                    start_configuration(data)
+                else:
+                    rcv_data()
+
+            rcv_data()
+
         except ConnectionRefusedError:
             retry = ""
             while retry != "y":

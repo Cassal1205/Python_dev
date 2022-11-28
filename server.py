@@ -7,6 +7,8 @@ import time
 HOST = "172.168.100.188"  # IP address
 PORT = 4321  # Port to listen on (non-privileged ports are > 1023)
 
+# message = "Hello from Python"
+
 
 def tcp_server():
 
@@ -22,7 +24,18 @@ def tcp_server():
             with conn:
 
                 data = conn.recv(1024).decode()
-                print(f"\nConnected by {addr}{data}")
+                print(f"\n\nConnected by {addr}\n{data}")
+                # conn.send(message.encode())
+                split = data.split(",")
+                imu = split[2]
+                print(f"Temperatura: {imu[0]}{imu[1]}")
+                print(f"Conteo de activaciones: {imu[3]}{imu[4]}{imu[5]}")
+                print(f"Hombre caído: {imu[11]}")
+                print(f"¿Activo?: {imu[12]}")
+                print(f"Evacuación: {imu[13]}")
+                print(f"Auxilio: {imu[14]}")
+                print(f"Recibido: {imu[15]}")
+                time.sleep(1)
 
 
 def main():

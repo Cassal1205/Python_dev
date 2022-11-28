@@ -330,9 +330,8 @@ def tcp_server():
             conn.send((command + parameter).encode())
 
     # Connection values
-    # host_name = socket.gethostname()
-    # local_ip = socket.gethostbyname(host_name)  # IP address
-    local_ip = ''
+    host_name = socket.gethostname()
+    local_ip = socket.gethostbyname(host_name)  # IP address
     port = 8077  # Port to listen on
     socket_address = (local_ip, port)
 
@@ -342,6 +341,7 @@ def tcp_server():
             # Bind and listen to the connection values
             s.bind(socket_address)
             s.listen(1)
+            print(f"\nServidor con IP: {local_ip}\t\tPuerto: {port}")
             print("\nEsperando cliente...")
 
             # Client connection accept
@@ -356,47 +356,70 @@ def tcp_server():
                 data = conn.recv(1024).decode()
                 mac = data
                 print(f"\nMAC recibida: {mac}")
-                print(f"\nEnviando mensaje {START_MESSAGE}...")
-                time.sleep(1)
 
-                # Send START_MESSAGE to the client
-                conn.send(START_MESSAGE.encode())
+                def send_flash():
+                    print(f"\nDato FLASH enviado...")
+                    conn.send("FLASH".encode())
 
-                # Receive START_MESSAGE confirmation and send SSID
-                recv_send("SSID", commands["ssid_c"], parameters["ssid"])
+                def start_configuration():
+                    print(f"\nEnviando mensaje {START_MESSAGE}...")
+                    time.sleep(1)
+                    # Send START_MESSAGE to the client
+                    conn.send(START_MESSAGE.encode())
 
-                # Receive SSID confirmation and send Password
-                recv_send("Password", commands["key_c"], parameters["password"])
+                    # Receive START_MESSAGE confirmation and send SSID
+                    recv_send("SSID", commands["ssid_c"], parameters["ssid"])
 
-                # Receive Password confirmation and send IP server
-                recv_send("IP server", commands["ip_server_c"], parameters["ip_server"])
+                    # Receive SSID confirmation and send Password
+                    recv_send("Password", commands["key_c"], parameters["password"])
 
-                # Receive IP confirmation and send Gate
-                recv_send("Gate", commands["gate_c"], parameters["gate"])
+                    # Receive Password confirmation and send IP server
+                    recv_send("IP server", commands["ip_server_c"], parameters["ip_server"])
 
-                # Receive Gate confirmation and send Mask
-                recv_send("Mask", commands["mask_c"], parameters["mask"])
+                    # Receive IP confirmation and send Gate
+                    recv_send("Gate", commands["gate_c"], parameters["gate"])
 
-                # Receive Mask confirmation and send IP client
-                recv_send("IP client", commands["ip_client_c"], parameters["ip_client"])
+                    # Receive Gate confirmation and send Mask
+                    recv_send("Mask", commands["mask_c"], parameters["mask"])
 
-                # Receive IP confirmation
-                data = conn.recv(1024).decode()
-                print(f"\nRecibido: {data}")
-                print("\nEnviando comando 'Configuración completada'...")
-                data_split = data.split("; ")
-                message = data_split[1]
-                time.sleep(1)
+                    # Receive Mask confirmation and send IP client
+                    recv_send("IP client", commands["ip_client_c"], parameters["ip_client"])
 
-                # Sending Reset command
-                if data == ("MAC: " + mac + "; " + message):
-                    conn.send(commands["succeed_c"].encode())
-                    tcp_conf["Finished"] = True
-                    print(f"\nConfiguración exitosa.")
-                else:
-                    tcp_conf["Finished"] = False
-            print("\nRegresando al inicio...")
-            start()
+                    # Receive IP confirmation
+                    data_ip = conn.recv(1024).decode()
+                    print(f"\nRecibido: {data_ip}")
+                    print("\nEnviando comando 'Configuración completada'...")
+                    data_split = data_ip.split("; ")
+                    message = data_split[1]
+                    time.sleep(1)
+
+                    # Sending Reset command
+                    if data_ip == ("MAC: " + mac + "; " + message):
+                        conn.send(commands["succeed_c"].encode())
+                        tcp_conf["Finished"] = True
+                        print(f"\nConfiguración exitosa.")
+                        s.close()
+                    else:
+                        tcp_conf["Finished"] = False
+                    print("\nRegresando al inicio...")
+                    start()
+
+                def conn_init():
+                    input_user = input(f"\n¿Qué deseas hacer?\n"
+                                       f"\t- (1) Identificar.\n"
+                                       f"\t- (2) Comenzar la configuración.\n"
+                                       f"\nRespuesta: ")
+                    if input_user == "1":
+                        send_flash()
+                        conn_init()
+                    elif input_user == "2":
+                        start_configuration()
+                    else:
+                        print(f"\n'{input_user}' no es una respuesta válida. Intenta de nuevo.")
+                        conn_init()
+
+                conn_init()
+
         except TimeoutError:
             s.close()
             print("\n\t\t\t\t-- Tiempo agotado. Reiniciando el servidor... --")
